@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Product {
+	
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
