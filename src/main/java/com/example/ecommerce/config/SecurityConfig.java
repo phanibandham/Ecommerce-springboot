@@ -35,6 +35,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**").permitAll()
                     .requestMatchers("/api/products/**", "/api/categories/**").hasRole("ADMIN")
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN") 
                     .anyRequest().authenticated())
             .exceptionHandling(ex -> ex
                     .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
