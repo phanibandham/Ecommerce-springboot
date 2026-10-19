@@ -1,6 +1,8 @@
 package com.example.ecommerce.service;
 
 import com.example.ecommerce.dto.PageResponse;
+import com.example.ecommerce.dto.ProductRequest;
+import com.example.ecommerce.dto.ProductResponse;
 import com.example.ecommerce.entity.Category;
 import com.example.ecommerce.entity.Product;
 import com.example.ecommerce.exception.BadRequestException;
@@ -30,23 +32,20 @@ public class ProductService {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    public Product addProduct(Product product) {
-        product.setCategory(resolveCategory(product));
-        return productRepository.save(product);
+    public ProductResponse addProduct(ProductRequest request) {
+        Product product = new Product();
+        applyRequest(product, request);
+        return toResponse(productRepository.save(product));
     }
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
-    }
-
-    public PageResponse<Product> searchProducts(String keyword,
-                                                Long categoryId,
-                                                Double minPrice,
-                                                Double maxPrice,
-                                                int page,
-                                                int size,
-                                                String sortBy,
-                                                String direction) {
+    public PageResponse<ProductResponse> searchProducts(String keyword,
+                                                        Long categoryId,
+                                                        Double minPrice,
+                                                        Double maxPrice,
+                                                        int page,
+                                                        int size,
+                                                        String sortBy,
+                                                        String direction) {
 
         if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
             throw new BadRequestException("minPrice cannot be greater than maxPrice");
@@ -67,8 +66,12 @@ public class ProductService {
         Page<Product> result = productRepository.search(
                 cleanKeyword, categoryId, minPrice, maxPrice, pageable);
 
+        List<ProductResponse> content = result.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+
         return new PageResponse<>(
-                result.getContent(),
+                content,
                 result.getNumber(),
                 result.getSize(),
                 result.getTotalElements(),
@@ -76,38 +79,58 @@ public class ProductService {
                 result.isLast());
     }
 
-    public Product getProductById(Long id) {
+    public ProductResponse getProductById(Long id) {
+        return toResponse(findProduct(id));
+    }
+
+    public ProductResponse updateProduct(Long id, ProductRequest request) {
+        Product existing = findProduct(id);
+        applyRequest(existing, request);
+        return toResponse(productRepository.save(existing));
+    }
+
+    public void deleteProduct(Long id) {
+        productRepository.delete(findProduct(id));
+    }
+
+    public List<ProductResponse> getProductsByCategory(Long categoryId) {
+        return productRepository.findByCategoryId(categoryId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    // ---------- helpers ----------
+
+    private Product findProduct(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
     }
 
-    public Product updateProduct(Long id, Product updatedProduct) {
-        Product existing = getProductById(id);
-
-        existing.setName(updatedProduct.getName());
-        existing.setDescription(updatedProduct.getDescription());
-        existing.setPrice(updatedProduct.getPrice());
-        existing.setStock(updatedProduct.getStock());
-        existing.setCategory(resolveCategory(updatedProduct));
-
-        return productRepository.save(existing);
+    private void applyRequest(Product product, ProductRequest request) {
+        product.setName(request.getName().trim());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setStock(request.getStock());
+        product.setCategory(resolveCategory(request.getCategoryId()));
     }
 
-    public void deleteProduct(Long id) {
-        Product existing = getProductById(id);
-        productRepository.delete(existing);
-    }
-
-    public List<Product> getProductsByCategory(Long categoryId) {
-        return productRepository.findByCategoryId(categoryId);
-    }
-
-    private Category resolveCategory(Product product) {
-        if (product.getCategory() == null || product.getCategory().getId() == null) {
+    private Category resolveCategory(Long categoryId) {
+        if (categoryId == null) {
             return null;
         }
-        Long categoryId = product.getCategory().getId();
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + categoryId));
+    }
+
+    private ProductResponse toResponse(Product product) {
+        Category category = product.getCategory();
+        return new ProductResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStock(),
+                category != null ? category.getId() : null,
+                category != null ? category.getName() : null);
     }
 }
