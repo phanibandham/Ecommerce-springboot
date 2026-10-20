@@ -1,4 +1,4 @@
-# E-Commerce REST API
+﻿# E-Commerce REST API
 
 A backend for an online store, built with **Spring Boot**. It covers user registration and login with JWT, a product catalog with search and pagination, a shopping cart, and transactional order placement, with role-based access for customers and admins.
 
@@ -67,6 +67,25 @@ Full interactive documentation: `http://localhost:8080/swagger-ui.html`
 | PUT | `/api/orders/{id}/cancel` | Owner |
 | GET | `/api/admin/orders` | Admin |
 | PUT | `/api/admin/orders/{id}/status` | Admin |
+
+
+
+## Screenshots
+
+### Application started
+![Application started](screenshots/started.png)
+
+### Swagger UI
+![Swagger UI](screenshots/swagger.png)
+
+### Successful order response
+![Register response](screenshots/register.png)
+
+### Docker containers running
+![Docker containers](screenshots/docker-ps.png)
+
+## Project Structure
+
 
 ## Getting Started
 
